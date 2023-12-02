@@ -1,0 +1,5 @@
+user_local: root
+passw_local: # ur password
+host_local: localhost # either localhost or ip e.g. '172.17.0.2' or hostname address
+port_local: 3306
+database_main: # ur database name
