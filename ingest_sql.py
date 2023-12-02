@@ -16,14 +16,13 @@ def get_data(symbol= 'ETHUSDT'):
     return data
 
 
-c = 0
-data = get_data()
-eth = pd.DataFrame([data['info']])
-eth['avg_price'] = data['average']
-
-eth['datetime'] = pd.to_datetime(data['datetime']) + timedelta64(7, 'h')
-
 while True:
+    data = get_data()
+    eth = pd.DataFrame([data['info']])
+    eth['avg_price'] = data['average']
+
+    eth['datetime'] = pd.to_datetime(data['datetime']) + timedelta64(7, 'h')
+    
     insert_eth(eth,ENGINE)
 
 print('dd')
