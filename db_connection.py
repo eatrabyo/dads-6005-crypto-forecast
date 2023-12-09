@@ -9,5 +9,5 @@ def mysql_engine(user,passw,host,port,database):
 # load config
 conf = OmegaConf.load('config.yaml')
 
-mydb_engine = mysql_engine(conf.user_local, conf.passw_local,
+mydb_engine = mysql_engine(conf.user_local, str(conf.passw_local),
                            conf.host_local, conf.port_local, conf.database_main)
