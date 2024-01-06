@@ -16,4 +16,8 @@ def get_ohlc(ticker):
 
     res = {k: float(v) for k,v in data.items() if k != 'symbol'}
     df = pd.concat([df,ohlc_df])
+    df.rename(columns={'openPrice':'open',
+               'highPrice':'high', 
+               'lowPrice':'low', 
+               'lastPrice':'close'},inplace=True)
     return df,res
