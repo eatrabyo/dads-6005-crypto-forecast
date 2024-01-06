@@ -65,7 +65,7 @@ while True: # use when get real data
         'closeTime': record['closeTime'],
         'y_actual': y,
         'y_predict': y_pred,
-        metric_str: model_metric
+        metric_str: model_metric.get()
     }
     if  y_pred != None:
         # continue
@@ -94,7 +94,7 @@ def plot_result():
     y_actual_values = [result['y_actual'] for result in lst_result]
     # y_predict_values = pd.Series([x['y_predict'] for x in lst_result]).shift(window_size).tolist()
     y_predict_values = [result['y_predict'] for result in lst_result]
-    mae_values = [result[metric_str].get() for result in lst_result]
+    rmse_values = [result[metric_str] for result in lst_result]
 
     # Plot the line graph with each second as a data point
     fig, ax1 = plt.subplots(figsize=(10, 6))
@@ -118,7 +118,7 @@ def plot_result():
 
     # Create a second y-axis for MAE values
     ax2 = ax1.twinx()
-    ax2.plot(close_times, mae_values, label=metric_str, marker='x', linestyle='-', color='red', markersize=5)
+    ax2.plot(close_times, rmse_values, label=metric_str, marker='x', linestyle='-', color='red', markersize=5)
 
     # Set labels and title for the second y-axis
     ax2.set_ylabel(metric_str, color='red')
