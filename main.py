@@ -4,30 +4,23 @@ import matplotlib.pyplot as plt
 from pandas import to_datetime
 import matplotlib.dates as mdates
 from pprint import pprint
-import tensorflow as tf
-
-#load model
 import pickle
 from sklearn.metrics import mean_squared_error
-from keras.models import Sequential, save_model, load_model
 from sklearn.preprocessing import MinMaxScaler
 
-# my module
+
 from get_ticker import get_ohlc
-from river_pipe import preprocessing_pipeline, MultiKeyShift# ,shift_back_data
+from river_pipe import preprocessing_pipeline, MultiKeyShift
 from river_pipe import learn_pred, create_metric,create_pipeline
 
-# load offiline model
+# load offline model
 rf = pickle.load(open('rf_pipe.pkl', 'rb'))
-# lstm = load_model("my_model.keras")
 scaler = MinMaxScaler(feature_range=(0,1))
 
-################# INTPUT ##################
 symbol = 'ETHUSDT'
 metric_str = 'RMSE'
 metric_rolling_size = 60
-
-# DUMMY DATAKEY
+seed = None
 data_key = ['openPrice', 'highPrice', 'lowPrice', 'lastPrice', 'priceChangePercent',
             'volume']
 y_key = 'lastPrice'
@@ -38,11 +31,10 @@ window_size = 60
 
 multi_key_shift = MultiKeyShift(keys= data_key, window_size= window_size, key_exclude= y_key)
 ## INIT PIPELINE
-model_pl = create_pipeline(num_seed=123)
+model_pl = create_pipeline(num_seed=seed)
 ## INIT METRIC
 model_metric = create_metric(metric_rolling_size)
 
-# CREAT LIST TO COLLECT RESULT
 river_result = []
 dct_result = {}
 
@@ -85,37 +77,24 @@ while True: # use when get real data
     }
     
     if  y_pred != None:
-        # continue
         river_result.append(dct_result)
-        # print(dct_result['MAE'])
         print(dct_result)
     
     sleep(1)
     c+=1
     if c > window_size + 600:
         break
-print(price_df)
-pprint(river_result)
-print(len(river_result))
-print('dd')
-    
-############################ END MODEL ##############################
-#--------------------------------------------------------------------#
+
  
-########################## PLOT ######################################
-
-
-
 def plot_result():
     global window_size
-    # Assuming lst_result is a list of dictionaries
-    # Extract 'closeTime', 'y_actual', 'y_predict', and 'MAE' from each dictionary
+
     close_times = [to_datetime(result['closeTime'], unit='ms') for result in river_result]
+
     y_actual_values_AMF = [result['y_actual_AMF'] for result in river_result]
-    # y_predict_values = pd.Series([x['y_predict'] for x in lst_result]).shift(window_size).tolist()
     y_predict_values_AMF = [result['y_predict_AMF'] for result in river_result]
     rmse_values_AMF = [result['RMSE_AMF'] for result in river_result]
-    # y_predict_values = pd.Series([x['y_predict'] for x in lst_result]).shift(window_size).tolist()
+
     y_predict_values_rf = [result['y_predict_rf'] for result in river_result]
     rmse_values_rf = [result['RMSE_rf'] for result in river_result]
 
@@ -126,27 +105,23 @@ def plot_result():
     ax1.plot(close_times, y_actual_values_AMF, label='Actual', marker='o', linestyle='-', markersize=5, color='blue')  
     ax1.plot(close_times, y_predict_values_AMF, label='Predicted_AMF', marker='x', linestyle='-', markersize=5, color='green')  
     ax1.legend(loc='upper left')
-    # ax1.set_xlabel('Close Time')
+
     ax1.set_ylabel('Values', color='blue')
     ax1.set_title('Actual vs Predicted Values over Time')
-    # Rotate x-axis labels for better readability
+
     plt.xticks(rotation=30)
-    # ax1.xaxis.set_major_formatter(mdates.DateFormatter('%H:%M:%S'))
+
     ax1.ticklabel_format(style='plain' ,axis='y')
     
     # Plot actual and predict values
     ax2.plot(close_times, y_actual_values_AMF, label='Actual', marker='o', linestyle='-', markersize=5, color='blue')  
     ax2.plot(close_times, y_predict_values_rf, label='Predicted_rf', marker='x', linestyle='-', markersize=5, color='orange')  
     ax2.legend(loc='upper left')
-    # ax2.set_xlabel('Close Time')
+
     ax2.set_ylabel('Values', color='blue')
     ax2.set_title('Actual vs Predicted Values (Random Forest)')
 
-    # Rotate x-axis labels for better readability
     plt.xticks(rotation=30)
-
-    # Set the x-axis format to show date and time
-    # ax2.xaxis.set_major_formatter(mdates.DateFormatter('%H:%M:%S'))
     
     ax3.plot(close_times, rmse_values_AMF, label='rmse_AMF', marker='o', linestyle='-', markersize=5, color='blue')  # Blue color for actual values
     ax3.plot(close_times, rmse_values_rf, label='rmse_rf', marker='x', linestyle='-', markersize=5, color='green')  # Green color for predicted values
@@ -170,6 +145,3 @@ def plot_result():
     plt.show()
         
 plot_result()
-
-
-############################################################################################################
