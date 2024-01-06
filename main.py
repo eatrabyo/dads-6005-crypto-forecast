@@ -3,13 +3,18 @@ from time import sleep
 import matplotlib.pyplot as plt
 from pandas import to_datetime
 import matplotlib.dates as mdates
+from pprint import pprint
+import pickle
 
 
 # my module
-from get_ticker import get_data
+from get_ticker import get_ohlc
 from river_pipe import preprocessing_pipeline, MultiKeyShift# ,shift_back_data
 from river_pipe import learn_pred, create_metric,create_pipeline
 
+
+# load offiline model
+rf = pickle.load(open('rf_pipe.pkl', 'rb'))
 
 ################# INTPUT ##################
 symbol = 'ETHUSDT'
@@ -27,20 +32,20 @@ window_size = 60
 
 multi_key_shift = MultiKeyShift(keys= data_key, window_size= window_size, key_exclude= y_key)
 ## INIT PIPELINE
-model_pl = create_pipeline()
+model_pl = create_pipeline(num_seed=123)
 ## INIT METRIC
-model_metric = create_metric(metric_str, metric_rolling_size)
+model_metric = create_metric(metric_rolling_size)
 
 # CREAT LIST TO COLLECT RESULT
-lst_result = []
+river_result = []
 dct_result = {}
 
 c = 0
 
 while True: # use when get real data
-    record = get_data(symbol, tf= '1m')
-    # print(record)
-    # print('\nopenPrice brefore preprocess :', record['openPrice'])
+    price_df,record = get_ohlc(symbol)
+    # pprint(record)
+
     prep_rec = preprocessing_pipeline(record)
     data_ = {key: prep_rec[key] for key in data_key}
     data_['lastPrice'] = record['lastPrice']
@@ -55,7 +60,7 @@ while True: # use when get real data
     
     ## LEARN AND PREDICT
     try:
-        _x, y, y_pred, model_pl, model_metric = learn_pred(x= prep_rec, y= y, pl= model_pl, metric= model_metric)
+        y, y_pred, model_pl, model_metric = learn_pred(x= prep_rec, y= y, pipeline= model_pl, metric= model_metric)
     except Exception as e:
         print(e)
         continue
@@ -69,15 +74,17 @@ while True: # use when get real data
     }
     if  y_pred != None:
         # continue
-        lst_result.append(dct_result)
+        river_result.append(dct_result)
         # print(dct_result['MAE'])
         print(dct_result)
     
     sleep(1)
     c+=1
-    if c > window_size + 60:
+    if c > window_size + 600:
         break
-    
+pprint(river_result)
+print(len(river_result))
+print('dd')
     
 ############################ END MODEL ##############################
 #--------------------------------------------------------------------#
@@ -90,11 +97,11 @@ def plot_result():
     global window_size
     # Assuming lst_result is a list of dictionaries
     # Extract 'closeTime', 'y_actual', 'y_predict', and 'MAE' from each dictionary
-    close_times = [to_datetime(result['closeTime'], unit='ms') for result in lst_result]
-    y_actual_values = [result['y_actual'] for result in lst_result]
+    close_times = [to_datetime(result['closeTime'], unit='ms') for result in river_result]
+    y_actual_values = [result['y_actual'] for result in river_result]
     # y_predict_values = pd.Series([x['y_predict'] for x in lst_result]).shift(window_size).tolist()
-    y_predict_values = [result['y_predict'] for result in lst_result]
-    rmse_values = [result[metric_str] for result in lst_result]
+    y_predict_values = [result['y_predict'] for result in river_result]
+    rmse_values = [result[metric_str] for result in river_result]
 
     # Plot the line graph with each second as a data point
     fig, ax1 = plt.subplots(figsize=(10, 6))
